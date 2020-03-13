@@ -2,14 +2,9 @@
 
 declare(strict_types=1);
 
-$projectDir = __DIR__.'/..';
-
-require $projectDir.'/vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
 use App\Controller;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Tools\Setup;
-use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -22,24 +17,7 @@ use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
-(new Dotenv())->load("$projectDir/.env");
-
-$paths = [
-    "$projectDir/src/Entity",
-];
-$isDevMode = 'dev' === $_ENV['APP_ENV'];
-$dbParams = [
-    'driver' => 'pdo_mysql',
-    'host' => 'db',
-    'port' => 3306,
-    'user' => $_ENV['DB_USER'],
-    'password' => $_ENV['DB_PASSWORD'],
-    'dbname' => $_ENV['DB_NAME'],
-];
-
-$config = Setup::createAnnotationMetadataConfiguration($paths, $isDevMode);
-$entityManager = EntityManager::create($dbParams, $config);
-
+$entityManager = require_once PROJECT_DIR.'/entityManager.php';
 $controller = new Controller($entityManager);
 $routes = new RouteCollection();
 
