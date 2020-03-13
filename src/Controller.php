@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace  App;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final  class  Controller
+final class Controller
 {
     public function getRoutes(): array
     {
         return [
-            '/api/products/generate' => [$this, 'generateProducts']
+            '/api/products/generate' => [$this, 'generateProducts'],
         ];
     }
 
@@ -17,5 +19,4 @@ final  class  Controller
     {
         return new Response('Hello products!');
     }
-
 }
