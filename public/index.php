@@ -17,8 +17,8 @@ use Symfony\Component\Routing\RouteCollection;
 require __DIR__.'/../vendor/autoload.php';
 
 $entityManager = require_once PROJECT_DIR.'/entityManager.php';
-$controller = new ApiController($entityManager);
 $request = Request::createFromGlobals();
+$controller = new ApiController($request, $entityManager);
 $routes = new RouteCollection();
 
 foreach ($controller->getRoutes() as $route) {

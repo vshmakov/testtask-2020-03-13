@@ -8,14 +8,18 @@ use App\Entity\Product;
 use App\Route;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ApiController
 {
+    private Request $request;
+
     private EntityManagerInterface $entityManager;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(Request $request, EntityManagerInterface $entityManager)
     {
+        $this->request = $request;
         $this->entityManager = $entityManager;
     }
 
