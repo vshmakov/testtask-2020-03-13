@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+require __DIR__.'/../vendor/autoload.php';
+
 use App\Controller\ApiController;
+use App\Entity\Order;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\Form\Forms;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
@@ -14,13 +16,27 @@ use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Workflow\DefinitionBuilder;
+use Symfony\Component\Workflow\MarkingStore\MethodMarkingStore;
+use Symfony\Component\Workflow\Transition;
+use Symfony\Component\Workflow\Workflow;
 
-require __DIR__.'/../vendor/autoload.php';
+$definitionBuilder = new DefinitionBuilder();
+$definition = $definitionBuilder->addPlaces([
+    Order::NEW_STATUS,
+    Order::PAID_STATUS,
+])
+    ->addTransition(new Transition(Order::PAY_TRANSITION, Order::NEW_STATUS, Order::PAID_STATUS))
+    ->build();
+
+$singleState = true;
+$property = 'status';
+$marking = new MethodMarkingStore($singleState, $property);
+$workflow = new Workflow($definition, $marking);
 
 $entityManager = require_once PROJECT_DIR.'/entityManager.php';
 $request = Request::createFromGlobals();
-$formFactory = Forms::createFormFactory();
-$controller = new ApiController($request, $entityManager, $formFactory);
+$controller = new ApiController($request, $entityManager, $workflow);
 $routes = new RouteCollection();
 
 foreach ($controller->getRoutes() as $route) {

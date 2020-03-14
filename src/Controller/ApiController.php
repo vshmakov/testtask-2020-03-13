@@ -8,13 +8,13 @@ use App\Entity\Order;
 use App\Entity\Product;
 use App\Route;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 final class ApiController
 {
@@ -22,13 +22,13 @@ final class ApiController
 
     private EntityManagerInterface $entityManager;
 
-    private FormFactoryInterface $formFactory;
+    private WorkflowInterface $workflow;
 
-    public function __construct(Request $request, EntityManagerInterface $entityManager, FormFactoryInterface $formFactory)
+    public function __construct(Request $request, EntityManagerInterface $entityManager, WorkflowInterface $workflow)
     {
         $this->request = $request;
         $this->entityManager = $entityManager;
-        $this->formFactory = $formFactory;
+        $this->workflow = $workflow;
     }
 
     /**
@@ -66,11 +66,11 @@ final class ApiController
             ->get('products');
 
         if (!\is_array($products)) {
-            return  $this->getExceptionResponse(new BadRequestHttpException('Products array is not specified'));
+            return $this->getExceptionResponse(new BadRequestHttpException('Products array is not specified'));
         }
 
         if (empty($products)) {
-            return  $this->getExceptionResponse(new BadRequestHttpException('Order must have products'));
+            return $this->getExceptionResponse(new BadRequestHttpException('Order must have products'));
         }
 
         $order = new Order();
@@ -81,7 +81,7 @@ final class ApiController
                 ->find($productId);
 
             if (null === $product) {
-                return  $this->getExceptionResponse(new NotFoundHttpException('Product not found'));
+                return $this->getExceptionResponse(new NotFoundHttpException('Product not found'));
             }
 
             $order->addProduct($product);
@@ -93,23 +93,37 @@ final class ApiController
         return new JsonResponse(['id' => $order->getId()]);
     }
 
-    public function payOrder(): JsonResponse
+    public function payOrder(): Response
     {
         $id = $this->request->get('id');
+        /** @var Order $order */
         $order = $this->entityManager
             ->getRepository(Order::class)
             ->find($id);
 
         if (null === $order) {
-            return  $this->getExceptionResponse(new NotFoundHttpException('Order not found'));
+            return $this->getExceptionResponse(new NotFoundHttpException('Order not found'));
         }
 
-        return new JsonResponse(['id' => $order->getId()]);
+        if (!$this->workflow->can($order, Order::PAY_TRANSITION)) {
+            return $this->getExceptionResponse(new BadRequestHttpException('Order can not be paid'));
+        }
+
+        $price = ((int) $this->request->request->get('price')) * 100;
+
+        if ($price !== $order->getPrice()) {
+            return $this->getExceptionResponse(new BadRequestHttpException('Price is invalid'));
+        }
+
+        $this->workflow->apply($order, Order::PAY_TRANSITION);
+        $this->entityManager->flush();
+
+        return new Response();
     }
 
     private function getExceptionResponse(HttpException $exception): JsonResponse
     {
-        return  new JsonResponse([
+        return new JsonResponse([
             'message' => $exception->getMessage(),
         ], $exception->getStatusCode());
     }
