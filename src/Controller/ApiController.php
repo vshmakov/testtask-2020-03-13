@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -66,11 +65,11 @@ final class ApiController
             ->get('products');
 
         if (!\is_array($products)) {
-            return $this->getExceptionResponse(new BadRequestHttpException('Products array is not specified'));
+            throw new BadRequestHttpException('Products array is not specified');
         }
 
         if (empty($products)) {
-            return $this->getExceptionResponse(new BadRequestHttpException('Order must have products'));
+            throw new BadRequestHttpException('Order must have products');
         }
 
         $order = new Order();
@@ -81,7 +80,7 @@ final class ApiController
                 ->find($productId);
 
             if (null === $product) {
-                return $this->getExceptionResponse(new NotFoundHttpException('Product not found'));
+                throw new NotFoundHttpException('Product not found');
             }
 
             $order->addProduct($product);
@@ -102,29 +101,22 @@ final class ApiController
             ->find($id);
 
         if (null === $order) {
-            return $this->getExceptionResponse(new NotFoundHttpException('Order not found'));
+            throw new NotFoundHttpException('Order not found');
         }
 
         if (!$this->workflow->can($order, Order::PAY_TRANSITION)) {
-            return $this->getExceptionResponse(new BadRequestHttpException('Order can not be paid'));
+            throw new BadRequestHttpException('Order can not be paid');
         }
 
         $price = ((int) $this->request->request->get('price')) * 100;
 
         if ($price !== $order->getPrice()) {
-            return $this->getExceptionResponse(new BadRequestHttpException('Price is invalid'));
+            throw new BadRequestHttpException('Price is invalid');
         }
 
         $this->workflow->apply($order, Order::PAY_TRANSITION);
         $this->entityManager->flush();
 
         return new Response();
-    }
-
-    private function getExceptionResponse(HttpException $exception): JsonResponse
-    {
-        return new JsonResponse([
-            'message' => $exception->getMessage(),
-        ], $exception->getStatusCode());
     }
 }

@@ -7,11 +7,13 @@ require __DIR__.'/../vendor/autoload.php';
 use App\Controller\ApiController;
 use App\Entity\Order;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
 use Symfony\Component\HttpKernel\Controller\ControllerResolver;
 use Symfony\Component\HttpKernel\EventListener\RouterListener;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
@@ -53,6 +55,13 @@ $argumentResolver = new ArgumentResolver();
 
 $kernel = new HttpKernel($dispatcher, $controllerResolver, new RequestStack(), $argumentResolver);
 
-$response = $kernel->handle($request);
+try {
+    $response = $kernel->handle($request);
+} catch (HttpException $exception) {
+    $response = new JsonResponse([
+        'message' => $exception->getMessage(),
+    ], $exception->getStatusCode());
+}
+
 $response->send();
 $kernel->terminate($request, $response);
