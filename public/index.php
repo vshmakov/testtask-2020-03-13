@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
 use App\Controller;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -17,8 +17,9 @@ use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
+$entityManager = require_once PROJECT_DIR.'/entityManager.php';
+$controller = new Controller($entityManager);
 $routes = new RouteCollection();
-$controller = new Controller();
 
 foreach ($controller->getRoutes() as $path => $callback) {
     $routes->add($path, new Route($path, [
