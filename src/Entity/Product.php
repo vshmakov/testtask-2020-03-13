@@ -16,11 +16,19 @@ class Product
 {
     /**
      * @Id
-     *     @Column(type="integer"))
      * @GeneratedValue
+     * @Column(type="integer")
      */
     private ?int  $id;
+
+    /**
+     * @Column(unique=true)
+     */
     private ?string  $name;
+
+    /**
+     * @Column(type="integer")
+     */
     private ?int  $price;
 
     public function getId(): ?int
