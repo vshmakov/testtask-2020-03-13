@@ -7,6 +7,7 @@ require __DIR__.'/../vendor/autoload.php';
 use App\Controller\ApiController;
 use App\Entity\Order;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -38,7 +39,8 @@ $workflow = new Workflow($definition, $marking);
 
 $entityManager = require_once PROJECT_DIR.'/entityManager.php';
 $request = Request::createFromGlobals();
-$controller = new ApiController($request, $entityManager, $workflow);
+$client = HttpClient::create();
+$controller = new ApiController($request, $entityManager, $workflow, $client);
 $routes = new RouteCollection();
 
 foreach ($controller->getRoutes() as $route) {
