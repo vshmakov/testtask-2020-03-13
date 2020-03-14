@@ -3,7 +3,6 @@
     "license": "proprietary",
     "require": {
         "symfony/dotenv": "*",
-        "symfony/form": "*",
         "symfony/http-client": "*",
         "symfony/workflow": "*",
         "symfony/http-kernel": "^5.0",
