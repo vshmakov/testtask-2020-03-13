@@ -8,12 +8,14 @@ use App\Entity\Order;
 use App\Entity\Product;
 use App\Route;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
+use Symfony\Component\Workflow\WorkflowInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class ApiController
 {
@@ -21,13 +23,16 @@ final class ApiController
 
     private EntityManagerInterface $entityManager;
 
-    private FormFactoryInterface $formFactory;
+    private WorkflowInterface $workflow;
 
-    public function __construct(Request $request, EntityManagerInterface $entityManager, FormFactoryInterface $formFactory)
+    private HttpClientInterface $client;
+
+    public function __construct(Request $request, EntityManagerInterface $entityManager, WorkflowInterface $workflow, HttpClientInterface $client)
     {
         $this->request = $request;
         $this->entityManager = $entityManager;
-        $this->formFactory = $formFactory;
+        $this->workflow = $workflow;
+        $this->client = $client;
     }
 
     /**
@@ -38,6 +43,8 @@ final class ApiController
         yield Route::post('/api/product/generate', [$this, 'generateProducts']);
 
         yield Route::post('/api/order/create', [$this, 'createOrder']);
+
+        yield Route::put('/api/order/{id}/pay', [$this, 'payOrder']);
     }
 
     public function generateProducts(): Response
@@ -88,5 +95,39 @@ final class ApiController
         $this->entityManager->flush();
 
         return new JsonResponse(['id' => $order->getId()]);
+    }
+
+    public function payOrder(): Response
+    {
+        $id = $this->request->get('id');
+        /** @var Order $order */
+        $order = $this->entityManager
+            ->getRepository(Order::class)
+            ->find($id);
+
+        if (null === $order) {
+            throw new NotFoundHttpException('Order not found');
+        }
+
+        if (!$this->workflow->can($order, Order::PAY_TRANSITION)) {
+            throw new BadRequestHttpException('Order can not be paid');
+        }
+
+        $price = ((int) $this->request->request->get('price')) * 100;
+
+        if ($price !== $order->getPrice()) {
+            throw new BadRequestHttpException('Price is invalid');
+        }
+
+        $response = $this->client->request(Request::METHOD_GET, 'https://ya.ru');
+
+        if (Response::HTTP_OK !== $response->getStatusCode()) {
+            throw  new ServiceUnavailableHttpException();
+        }
+
+        $this->workflow->apply($order, Order::PAY_TRANSITION);
+        $this->entityManager->flush();
+
+        return new Response();
     }
 }

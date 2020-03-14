@@ -22,6 +22,8 @@ class Order
     public const  NEW_STATUS = 'new';
     public const  PAID_STATUS = 'paid';
 
+    public const  PAY_TRANSITION = 'pay';
+
     /**
      * @Id
      * @GeneratedValue
@@ -58,6 +60,15 @@ class Order
     public function setStatus(string $status): void
     {
         $this->status = $status;
+    }
+
+    public function getPrice(): int
+    {
+        return array_sum(
+            $this->products
+                ->map(fn (Product $product): int => $product->getPrice())
+            ->toArray()
+        );
     }
 
     public function getProducts(): Collection

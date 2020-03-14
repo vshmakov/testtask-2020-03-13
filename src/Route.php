@@ -16,4 +16,12 @@ final class Route extends BaseRoute
         ]))
             ->setMethods([Request::METHOD_POST]);
     }
+
+    public static function put(string $path, callable $controller): self
+    {
+        return (new self($path, [
+            '_controller' => $controller,
+        ]))
+            ->setMethods([Request::METHOD_PUT]);
+    }
 }
