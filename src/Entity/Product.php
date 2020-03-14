@@ -22,7 +22,7 @@ class Product
     private ?int  $id;
 
     /**
-     * @Column(unique=true)
+     * @Column
      */
     private ?string  $name;
 
