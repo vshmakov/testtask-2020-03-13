@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ApiController
@@ -38,6 +39,8 @@ final class ApiController
         yield Route::post('/api/product/generate', [$this, 'generateProducts']);
 
         yield Route::post('/api/order/create', [$this, 'createOrder']);
+
+        yield Route::put('/api/order/{id}/pay', [$this, 'payOrder']);
     }
 
     public function generateProducts(): Response
@@ -63,11 +66,11 @@ final class ApiController
             ->get('products');
 
         if (!\is_array($products)) {
-            throw new BadRequestHttpException('Products array is not specified');
+            return  $this->getExceptionResponse(new BadRequestHttpException('Products array is not specified'));
         }
 
         if (empty($products)) {
-            throw new BadRequestHttpException('Order must have products');
+            return  $this->getExceptionResponse(new BadRequestHttpException('Order must have products'));
         }
 
         $order = new Order();
@@ -78,7 +81,7 @@ final class ApiController
                 ->find($productId);
 
             if (null === $product) {
-                throw new NotFoundHttpException('Product not found');
+                return  $this->getExceptionResponse(new NotFoundHttpException('Product not found'));
             }
 
             $order->addProduct($product);
@@ -88,5 +91,26 @@ final class ApiController
         $this->entityManager->flush();
 
         return new JsonResponse(['id' => $order->getId()]);
+    }
+
+    public function payOrder(): JsonResponse
+    {
+        $id = $this->request->get('id');
+        $order = $this->entityManager
+            ->getRepository(Order::class)
+            ->find($id);
+
+        if (null === $order) {
+            return  $this->getExceptionResponse(new NotFoundHttpException('Order not found'));
+        }
+
+        return new JsonResponse(['id' => $order->getId()]);
+    }
+
+    private function getExceptionResponse(HttpException $exception): JsonResponse
+    {
+        return  new JsonResponse([
+            'message' => $exception->getMessage(),
+        ], $exception->getStatusCode());
     }
 }
