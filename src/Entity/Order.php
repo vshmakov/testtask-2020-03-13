@@ -35,7 +35,7 @@ class Order
     private string  $status = self::NEW_STATUS;
 
     /**
-     * @var Product[]
+     * @var Collection|Product[]
      * @ManyToMany(targetEntity=Product::class)
      */
     private Collection $products;
@@ -60,13 +60,13 @@ class Order
         $this->status = $status;
     }
 
-    public function getProducts(): array
+    public function getProducts(): Collection
     {
         return $this->products;
     }
 
-    public function setProducts(array $products): void
+    public function addProduct($product): void
     {
-        $this->products = $products;
+        $this->products[] = $product;
     }
 }

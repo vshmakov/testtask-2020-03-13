@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controller\ApiController;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Form\Forms;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
@@ -18,7 +19,8 @@ require __DIR__.'/../vendor/autoload.php';
 
 $entityManager = require_once PROJECT_DIR.'/entityManager.php';
 $request = Request::createFromGlobals();
-$controller = new ApiController($request, $entityManager);
+$formFactory = Forms::createFormFactory();
+$controller = new ApiController($request, $entityManager, $formFactory);
 $routes = new RouteCollection();
 
 foreach ($controller->getRoutes() as $route) {
