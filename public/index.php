@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__.'/../vendor/autoload.php';
-
-use App\Controller;
+use App\Controller\ApiController;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -14,20 +12,18 @@ use Symfony\Component\HttpKernel\EventListener\RouterListener;
 use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
-use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
+require __DIR__.'/../vendor/autoload.php';
+
 $entityManager = require_once PROJECT_DIR.'/entityManager.php';
-$controller = new Controller($entityManager);
+$controller = new ApiController($entityManager);
+$request = Request::createFromGlobals();
 $routes = new RouteCollection();
 
-foreach ($controller->getRoutes() as $path => $callback) {
-    $routes->add($path, new Route($path, [
-        '_controller' => $callback,
-    ]));
+foreach ($controller->getRoutes() as $route) {
+    $routes->add($route->getPath(), $route);
 }
-
-$request = Request::createFromGlobals();
 
 $matcher = new UrlMatcher($routes, new RequestContext());
 

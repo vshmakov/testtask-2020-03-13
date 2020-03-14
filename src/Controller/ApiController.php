@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace App\Controller;
 
 use App\Entity\Product;
+use App\Route;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-final class Controller
+final class ApiController
 {
     private EntityManagerInterface $entityManager;
 
@@ -17,11 +19,14 @@ final class Controller
         $this->entityManager = $entityManager;
     }
 
-    public function getRoutes(): array
+    /**
+     * @return Route[]
+     */
+    public function getRoutes(): iterable
     {
-        return [
-            '/api/products/generate' => [$this, 'generateProducts'],
-        ];
+        yield Route::post('/api/product/generate', [$this, 'generateProducts']);
+
+        yield Route::post('/api/order/create', [$this, 'createOrder']);
     }
 
     public function generateProducts(): Response
@@ -38,5 +43,10 @@ final class Controller
         $this->entityManager->flush();
 
         return new Response();
+    }
+
+    public function createOrder(): JsonResponse
+    {
+        return new JsonResponse(['id' => 1]);
     }
 }
