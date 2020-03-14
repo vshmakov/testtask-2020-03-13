@@ -113,7 +113,7 @@ final class ApiController
             throw new BadRequestHttpException('Order can not be paid');
         }
 
-        $price = ((int) $this->request->request->get('price')) * 100;
+        $price = (int) ((float) $this->request->request->get('price')) * 100;
 
         if ($price !== $order->getPrice()) {
             throw new BadRequestHttpException('Price is invalid');
